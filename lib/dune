@@ -1,0 +1,9 @@
+(include_subdirs unqualified)
+
+(library
+ (name advent_of_code_2023)
+ (public_name advent_of_code_2023)
+ (libraries core)
+ (modules day01 file_utils)
+ (private_modules file_utils))
+
