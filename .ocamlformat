@@ -1,0 +1,5 @@
+profile = default
+break-cases = all
+wrap-comments = true
+line-endings = lf
+break-infix=wrap-or-vertical

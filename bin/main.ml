@@ -1,17 +1,44 @@
 open Advent_of_code_2023.Day01
+open Advent_of_code_2023.File_utils
 
 let usage_msg = "adv2023 -d <day number>"
-let day : int option ref = ref None
-let speclist = [
-    ("-d", Arg.Int (fun d -> day:= Some(d)) , "Day number")
-]
+let input_day : int option ref = ref None
+let input_file : string option ref = ref None
 
-let solve_day: int -> string = function 
-    | 1 -> Day01.solve()
-    | d -> "Day " ^ (string_of_int d) ^ " not implemented"
+let speclist =
+  [
+    ("-d", Arg.Int (fun d -> input_day := Some d), "Day number");
+    ("-i", Arg.String (fun i -> input_file := Some i), "Input file");
+  ]
+
+type answer = IntAnswer of int | StringAnswer of string
+
+let part_not_implemented = "not implemented"
+
+let solve_day day input =
+  match day with
+  | 1 ->
+      (IntAnswer (Day01.solve_part1 input), IntAnswer (Day01.solve_part2 input))
+  | _ -> (StringAnswer part_not_implemented, StringAnswer part_not_implemented)
 
 let () =
-    Arg.parse speclist (fun _ -> ()) usage_msg;
-    match !day with
-    | None -> print_endline "No day specified"
-    | Some d -> print_endline (solve_day d);
+  Arg.parse speclist (fun _ -> ()) usage_msg;
+  let day = Option.get !input_day in
+  let file = Option.get !input_file in
+  let input = File_utils.read_file_to_list_of_strings file in
+
+  print_endline ("The answers for day " ^ string_of_int day ^ "\n");
+
+  match solve_day day input with
+  | IntAnswer part1, IntAnswer part2 ->
+      Printf.printf "part1 is: %d\n" part1;
+      Printf.printf "part2 is: %d\n" part2
+  | StringAnswer part1, StringAnswer part2 ->
+      print_string ("part1 is: " ^ part1 ^ "\n");
+      print_string ("part2 is: " ^ part2 ^ "\n")
+  | IntAnswer part1, StringAnswer part2 ->
+      Printf.printf "part1 is: %d\n" part1;
+      print_string ("part2 is: " ^ part2 ^ "\n")
+  | _ ->
+      print_string "Unexpected answer shape";
+      print_endline ""
