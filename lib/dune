@@ -4,7 +4,7 @@
  (name advent_of_code_2023)
  (public_name advent_of_code_2023)
  (libraries core str)
- (modules day01 file_utils)
+ (modules day01 day02 file_utils)
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
