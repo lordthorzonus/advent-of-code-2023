@@ -29,3 +29,5 @@ setup.log
 _opam/
 
 .idea/
+
+inputs/
