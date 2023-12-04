@@ -57,18 +57,13 @@ let get_adjacent_entries x y engine_schematic =
 
   List.map directions ~f:get_entry
 
-let has_symbol_adjacent_to_digit
-    (engine_schematic : schematic_symbol option array array)
-    (position : valid_part_number_position) =
-  let x = position.x in
-  let y = position.y in
-
+let has_symbol_adjacent_to_digit engine_schematic position =
+  let x, y = (position.x, position.y) in
   let entries_contain_symbol =
     engine_schematic |> get_adjacent_entries x y |> List.exists ~f:is_symbol
   in
-
   match engine_schematic.(y).(x) with
-  | Some (Digit _) -> if entries_contain_symbol then true else false
+  | Some (Digit _) -> entries_contain_symbol
   | _ -> false
 
 type number = { positions : int list; value : int }
@@ -145,46 +140,38 @@ let list_of_ints_to_int (l : int list) =
 
 let get_gear_ratios_for_valid_gear_positions
     (engine_schematic : schematic_symbol option array array) =
-  let rows = Array.length engine_schematic in
-  let gear_positions = ref [] in
-  let numbers_in_row : numbers_in_row list ref = ref [] in
-  let gear_ratios : int list ref = ref [] in
+  let gear_positions =
+    Array.foldi engine_schematic ~init:[] ~f:(fun y acc_row row ->
+        Array.foldi row ~init:acc_row ~f:(fun x acc_col entry ->
+            match entry with
+            | Some (Symbol '*') -> { x; y } :: acc_col
+            | _ -> acc_col))
+  in
 
-  for y = 0 to rows - 1 do
-    let row = engine_schematic.(y) in
-    for x = 0 to Array.length row - 1 do
-      match row.(x) with
-      | Some (Symbol '*') -> gear_positions := { x; y } :: !gear_positions
-      | _ -> ()
-    done;
-    numbers_in_row :=
-      { row_index = y; numbers = get_numbers_from_schematic_row row }
-      :: !numbers_in_row
-  done;
+  let numbers_in_row =
+    Array.mapi engine_schematic ~f:(fun y row ->
+        { row_index = y; numbers = get_numbers_from_schematic_row row })
+    |> Array.to_list
+  in
 
-  List.iter !gear_positions ~f:(fun gear_position ->
+  List.filter_map gear_positions ~f:(fun gear_position ->
       let rows_around_gear =
         [ gear_position.y - 1; gear_position.y; gear_position.y + 1 ]
       in
+
       let numbers_around =
-        List.filter !numbers_in_row ~f:(fun { row_index; _ } ->
+        List.filter numbers_in_row ~f:(fun { row_index; _ } ->
             List.exists rows_around_gear ~f:(fun row -> row = row_index))
       in
 
       let numbers_adjacent_to_gear =
-        List.map numbers_around ~f:(fun { numbers; row_index } ->
+        List.concat_map numbers_around ~f:(fun { numbers; row_index } ->
             get_numbers_adjacent_to_gear numbers row_index gear_position)
-        |> List.concat
       in
 
-      if List.length numbers_adjacent_to_gear = 2 then
-        gear_ratios :=
-          (List.hd_exn numbers_adjacent_to_gear).value
-          * (List.last_exn numbers_adjacent_to_gear).value
-          :: !gear_ratios
-      else ());
-
-  !gear_ratios
+      match numbers_adjacent_to_gear with
+      | [ num1; num2 ] -> Some (num1.value * num2.value)
+      | _ -> None)
 
 module Day03 = struct
   let solve_part1 (input : string list) : int =
@@ -275,8 +262,8 @@ let%expect_test "get_part_numbers_for_valid_gear_positions" =
   List.iter gear_ratios ~f:(fun gear_ratio ->
       print_s [%message (gear_ratio : int)]);
   [%expect {| 
-    (gear_ratio 16345)
     (gear_ratio 451490)
+    (gear_ratio 16345)
         |}]
 
 let%expect_test "solve_part2" =
