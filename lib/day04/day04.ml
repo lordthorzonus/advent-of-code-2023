@@ -1,6 +1,7 @@
 open Core
 
 type card = { id : int; winning_numbers : int list; numbers_in_card : int list }
+type card_result_part = { id : int; copy_ids : int list }
 
 let normalize_int_string_to_int s = s |> String.strip |> int_of_string
 
@@ -26,9 +27,10 @@ let parse_line_to_card (line : string) =
 let list_contains_entry (list : 'a list) (entry : 'a) =
   List.exists ~f:(fun x -> x = entry) list
 
-let get_matched_numbers (card : card) =
+let count_matched_numbers (card : card) =
   card.numbers_in_card
   |> List.filter ~f:(list_contains_entry card.winning_numbers)
+  |> List.length
 
 let calculate_score (matches : int) =
   match matches with
@@ -37,11 +39,21 @@ let calculate_score (matches : int) =
   | 2 -> 2
   | n -> Int.pow 2 (n - 1)
 
-let score_card (card : card) =
-  card.numbers_in_card
-  |> List.filter ~f:(list_contains_entry card.winning_numbers)
-  |> List.length
-  |> calculate_score
+let score_card (card : card) = card |> count_matched_numbers |> calculate_score
+let array_sum (array : int array) = Array.fold ~init:0 ~f:( + ) array
+
+let count_number_of_winned_cards cards =
+  let cards_count = Array.create ~len:(List.length cards) 1 in
+  let matches = List.map ~f:count_matched_numbers cards in
+
+  List.iteri
+    ~f:(fun i number_of_matches ->
+      for j = i to i + number_of_matches - 1 do
+        cards_count.(j + 1) <- cards_count.(j + 1) + cards_count.(i)
+      done)
+    matches;
+
+  cards_count |> array_sum
 
 module Day04 = struct
   let solve_part1 (input : string list) =
@@ -49,6 +61,9 @@ module Day04 = struct
     |> List.map ~f:parse_line_to_card
     |> List.map ~f:score_card
     |> List.reduce_exn ~f:( + )
+
+  let solve_part2 (input : string list) =
+    input |> List.map ~f:parse_line_to_card |> count_number_of_winned_cards
 end
 
 let test_input =
@@ -102,3 +117,8 @@ let%expect_test "score_card" =
 let%expect_test "solve_part1" =
   print_s [%message (Day04.solve_part1 test_input : int)];
   [%expect {| ("Day04.solve_part1 test_input" 13) |}]
+
+let%expect_test "count_number_of_winned_cards" =
+  let cards = test_input |> List.map ~f:parse_line_to_card in
+  print_s [%message (count_number_of_winned_cards cards : int)];
+  [%expect {| ("count_number_of_winned_cards cards" 30) |}]
