@@ -212,3 +212,9 @@ let%expect_test "solve day 5 part 1" =
   let solution = Day05.solve_part1 test_input in
   print_s [%sexp (solution : int)];
   [%expect {| 35 |}]
+
+(*Commented out because of the brute force solution*)
+(* let%expect_test "solve day 5 part 2" = *)
+(*   let solution = Day05.solve_part2 test_input in *)
+(*   print_s [%sexp (solution : int)]; *)
+(*   [%expect {| 46 |}] *)
