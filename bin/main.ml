@@ -4,6 +4,7 @@ open Advent_of_code_2023.Day03
 open Advent_of_code_2023.Day04
 open Advent_of_code_2023.Day05
 open Advent_of_code_2023.Day06
+open Advent_of_code_2023.Day07
 open Advent_of_code_2023.File_utils
 
 let usage_msg = "adv2023 -d <day number>"
@@ -34,6 +35,8 @@ let solve_day day input =
       (IntAnswer (Day05.solve_part1 input), IntAnswer (Day05.solve_part2 input))
   | 6 ->
       (IntAnswer (Day06.solve_part1 input), IntAnswer (Day06.solve_part2 input))
+  | 7 ->
+      (IntAnswer (Day07.solve_part1 input), IntAnswer (Day07.solve_part2 input))
   | _ -> (StringAnswer part_not_implemented, StringAnswer part_not_implemented)
 
 let () =
