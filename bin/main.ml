@@ -38,7 +38,8 @@ let solve_day day input =
       (IntAnswer (Day06.solve_part1 input), IntAnswer (Day06.solve_part2 input))
   | 7 ->
       (IntAnswer (Day07.solve_part1 input), IntAnswer (Day07.solve_part2 input))
-  | 8 -> (IntAnswer (Day08.solve_part1 input), StringAnswer part_not_implemented)
+  | 8 ->
+      (IntAnswer (Day08.solve_part1 input), IntAnswer (Day08.solve_part2 input))
   | _ -> (StringAnswer part_not_implemented, StringAnswer part_not_implemented)
 
 let () =

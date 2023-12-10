@@ -1,6 +1,14 @@
 open Core
 module Network = Hashtbl.Make (String)
 
+let gcd a b =
+  let rec gcd' a b = if b = 0 then a else gcd' b (a mod b) in
+  if a >= 0 && b >= 0 then gcd' a b
+  else invalid_arg "gcd: arguments must be non-negative"
+
+let lcm a b = if a = 0 || b = 0 then 0 else abs (a * b) / gcd a b
+let lcm_list = List.fold ~f:lcm ~init:1
+
 type network = (string * string) Network.t
 
 let add_to_network (element_id : string) (left, right) (network : network) =
@@ -61,8 +69,8 @@ let parse_input (input : string list) =
   in
   (network, navigation_instructions)
 
-let count_path_to_exit navigation_instructions (network : network) =
-  let starting_node = "AAA" in
+let count_path_to_exit navigation_instructions starting_node is_ending_node
+    (network : network) =
   let max_instruction_index = Array.length navigation_instructions in
 
   let rec traverse_network node instruction_index count =
@@ -76,16 +84,33 @@ let count_path_to_exit navigation_instructions (network : network) =
     in
 
     match next_node with
-    | "ZZZ" -> count + 1
+    | s when is_ending_node s -> count + 1
     | _ -> traverse_network next_node next_instruction_index (count + 1)
   in
 
   traverse_network starting_node 0 0
 
+let string_ends_with ~suffix str = String.equal (String.suffix str 1) suffix
+
+let get_all_nodes_ending_with ~char (network : network) =
+  Hashtbl.filter_keys network ~f:(fun key -> string_ends_with ~suffix:char key)
+  |> Hashtbl.keys
+
 module Day08 = struct
   let solve_part1 (input : string list) =
     input |> parse_input |> fun (network, navigation_instructions) ->
-    count_path_to_exit navigation_instructions network
+    count_path_to_exit navigation_instructions "AAA"
+      (fun node -> String.equal node "ZZZ")
+      network
+
+  let solve_part2 (input : string list) =
+    input |> parse_input |> fun (network, navigation_instructions) ->
+    let all_starting_nodes = get_all_nodes_ending_with ~char:"A" network in
+    List.map all_starting_nodes ~f:(fun node ->
+        count_path_to_exit navigation_instructions node
+          (fun node -> string_ends_with ~suffix:"Z" node)
+          network)
+    |> lcm_list
 end
 
 let test_input =
@@ -104,10 +129,29 @@ let test_input =
 let test_input2 =
   [ "LLR"; ""; "AAA = (BBB, BBB)"; "BBB = (AAA, ZZZ)"; "ZZZ = (ZZZ, ZZZ)" ]
 
+let test_input3 =
+  [
+    "LR";
+    "";
+    "11A = (11B, XXX)";
+    "11B = (XXX, 11Z)";
+    "11Z = (11B, XXX)";
+    "22A = (22B, XXX)";
+    "22B = (22C, 22C)";
+    "22C = (22Z, 22Z)";
+    "22Z = (22B, 22B)";
+    "XXX = (XXX, XXX)";
+  ]
+
 let%expect_test "part1" =
   let result = Day08.solve_part1 test_input in
   print_s [%sexp (result : int)];
   [%expect {| 2 |}];
-  let result2 = Day08.solve_part1 test_input2 in
+  let result2 = Day08.solve_part2 test_input2 in
   print_s [%sexp (result2 : int)];
+  [%expect {| 6 |}]
+
+let%expect_test "part2" =
+  let result = Day08.solve_part2 test_input3 in
+  print_s [%sexp (result : int)];
   [%expect {| 6 |}]
